@@ -98,3 +98,7 @@ endstatement = ';'
 
 specialCharacters =  r"!\"#$%&'()*+-/:<=>?@[\]^`{|}~"
 
+duallist = ['DUAL', 'dual']
+
+technicalParameter = ['GFD', 'gfd']
+

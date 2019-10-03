@@ -1,6 +1,6 @@
 import json
 import os
-from pathlib import Path
+from pathlib import Path, WindowsPath
 
 
 class Configuration(object):
