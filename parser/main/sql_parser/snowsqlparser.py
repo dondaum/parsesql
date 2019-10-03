@@ -41,7 +41,9 @@ class ParseSql(object):
         self.base_clean_up()
         #self.remove_header_view_col_definition()
         #print(self.filecontent[95:1171])
-        print(self.filecontent)
+        #print(self.filecontent)
+        self.getfinalFrom()
+        #print(self.get_comma_cte_new_regex())
         #print(self.parseFromEnd())
         #print(self.getCreateName())
 
@@ -62,7 +64,25 @@ class ParseSql(object):
 
     def get_comma_cte_new_regex(self):
         #\w+(?=\s*(as|AS)[^/])
-        pass
+        #\w+(?=\s*(\bas\b|\bAS\b)[^/])
+        #(?<=\AS\s)(\w+)
+        #\w+(?=\s+AS)
+        
+        allcommactes = list()
+
+        for cte in re.finditer(r"\w+(?=\s*(\bas\b|\bAS\b)[^/])", self.filecontent, re.MULTILINE):
+            raw = cte.group(0)
+            raw = raw.replace(" ", "")
+            raw = self.removeSpecialCharacters(raw=raw)
+            raw = self.removeCommaCharacters(raw=raw)
+            raw = self.removeReservedCharacters(raw=raw)
+            print(raw)
+            raw = self.removeLeftWhiteSpace(raw=raw)
+            raw = self.removeAllWhiteSpaceFromString(raw=raw)
+            raw = raw.upper()
+            #print(raw)
+            allcommactes.append(raw)
+        return allcommactes
 
     def parseStatement(self, stat: str) -> list:
         statement = stat
@@ -93,6 +113,7 @@ class ParseSql(object):
             raw = self.removeReservedCharacters(raw=raw)
             raw = self.removeLeftWhiteSpace(raw=raw)
             raw = self.removeAllWhiteSpaceFromString(raw=raw)
+            raw = raw.upper()
             allcommactes.append(raw)
         print(allcommactes)
         return allcommactes
@@ -122,6 +143,7 @@ class ParseSql(object):
                 raw = self.removeReservedCharacters(raw=raw)
                 raw = self.removeLeftWhiteSpace(raw=raw)
                 raw = self.removeAllWhiteSpaceFromString(raw=raw)
+                raw = raw.upper()
                 allcommactes.append(raw)
         print(allcommactes)
         return allcommactes
@@ -151,6 +173,7 @@ class ParseSql(object):
                     raw = self.removeReservedCharacters(raw=raw)
                     raw = self.removeLeftWhiteSpace(raw=raw)
                     raw = self.removeAllWhiteSpaceFromString(raw=raw)
+                    raw = raw.upper()
                     #print(raw)
                     allcommactes.append(raw)
         #print(allcommactes)
@@ -244,6 +267,11 @@ class ParseSql(object):
             #print('4', raw_str)
             raw_str = self.removeLeftWhiteSpace(raw=raw_str)
             #print('5', raw_str)
+            raw_str = self.removeTabs(raw=raw_str)
+            #print('6', raw_str)
+            raw_str = self.removeCommaCharacters(raw=raw_str)
+            #print('7', raw_str)
+            raw_str = raw_str.upper()
 
             #print(">>>>>>>>>>>>>>>", raw_str)
 
@@ -255,6 +283,12 @@ class ParseSql(object):
 
         rawFroms = self.removeAllAfterWhitespace(raw=rawFroms)
         return rawFroms
+
+    def removeTabs(self, raw: str) -> str:
+        """
+        instance method that replace tabs character with whitespace
+        """
+        return raw.replace('\t', ' ')
 
     def removeLinebreaks(self, raw: str) -> str:
         return raw.replace('\n','')
@@ -275,7 +309,8 @@ class ParseSql(object):
 
     def removeReservedCharacters(self, raw: str) -> str:
         for char in reservedSqlExpressions:
-            if char in raw:
+            #if char in raw:
+            if re.match(r"\b"+ char + r"\b", raw):
                 #print('Character found: ', char)
                 raw = raw.replace(char, '')
         return raw
@@ -327,8 +362,10 @@ class ParseSql(object):
             if whitespace in element:
                 pos = element.find(whitespace)
                 element = element[:pos]
+                print('8', element)
                 newraw.append(element)
             else:
+                print('8', element)
                 newraw.append(element) 
         return newraw
 
@@ -350,6 +387,7 @@ class ParseSql(object):
                                                                       and objekt not in self.newparseCommaCTEs()
                                                                       and objekt not in self.detect_next_line_as()   
                                                                       and objekt not in technicalParameter  
+                                                                      and objekt not in self.get_comma_cte_new_regex()
                                                                     ]
         tables = [self.upperStr(raw=table) for table in tables]
                                                                       
