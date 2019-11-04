@@ -2,7 +2,6 @@ import os
 import re
 from .sqlExpressions import reservedSqlExpressions, specialCharacters, endstatement, duallist, technicalParameter
 import exampleSql
-from config.config_reader import Config
 import textwrap
 
 class ParseSql(object):
@@ -258,27 +257,27 @@ class ParseSql(object):
             end   = pos[1]
             
             raw_str = self.filecontent[start:end]
-            #print('1', raw_str)
+            print('1', raw_str)
             raw_str = self.removeAllAfterEndParenthesis(raw=raw_str)
-            #print('2', raw_str)
+            print('2', raw_str)
             raw_str = self.removeSpecialCharacters(raw=raw_str)
-            #print('3', raw_str)
+            print('3', raw_str)
             raw_str = self.removeLinebreaks(raw=raw_str)
-            #print('4', raw_str)
+            print('4', raw_str)
             raw_str = self.removeLeftWhiteSpace(raw=raw_str)
-            #print('5', raw_str)
+            print('5', raw_str)
             raw_str = self.removeTabs(raw=raw_str)
-            #print('6', raw_str)
-            raw_str = self.removeCommaCharacters(raw=raw_str)
-            #print('7', raw_str)
+            print('6', raw_str)
             raw_str = raw_str.upper()
 
-            #print(">>>>>>>>>>>>>>>", raw_str)
+            print(">>>>>>>>>>>>>>>", raw_str)
 
-            #raw_str = self.detectOldJoin(raw=raw_str)
+            raw_str = self.detectOldJoin(raw=raw_str)
+
             if isinstance(raw_str, list):
                 rawFroms.extend(raw_str)
             else:
+                raw_str = self.removeCommaCharacters(raw=raw_str)
                 rawFroms.append(raw_str)
 
         rawFroms = self.removeAllAfterWhitespace(raw=rawFroms)
@@ -329,9 +328,18 @@ class ParseSql(object):
             print('$$$$$ There is a comma in a string:', raw)
             print('###', raw)
             raw = raw.lstrip()
-            raw = raw.replace(" ", "")
-            raw = raw.split(',')
+            print('###', raw)
+            #raw = raw.replace(" ", "")
             #print('###', raw)
+            raw = raw.split(',')
+
+            final_raw = list()
+            for e in raw:
+                e = e.lstrip()
+                print('###', e)
+                final_raw.append(e)
+            print('FINAL ###', final_raw)
+            return final_raw
         return raw
 
     def removeLeftWhiteSpace(self, raw: str) -> str:

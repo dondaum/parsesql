@@ -3,12 +3,17 @@ from main.sql_parser.file_finder import FileFinder
 from main.database.db_engine import Session
 from main.database.models import TableDependency
 import uuid
+#import multiprocessing
+from multiprocessing import Pool, cpu_count
+import cProfile
+import time
 
 
 class Runner(object):
     def __init__(self):
         self.allfiles = None
         self.dependencies = list()
+        self.proccess = self.determine_max_proc()
 
     def findFiles(self):
         self.allfiles = FileFinder().getListOfFiles()
@@ -16,6 +21,18 @@ class Runner(object):
     def parseSql(self):
         for file in self.allfiles:
             self.dependencies.append(ParseSql(file=file).getfinalFrom())
+    
+    def exp_para_parseSql(self, file):
+        self.dependencies.append(ParseSql(file=file).getfinalFrom())
+
+    def para_parseSql(self):
+        number_of_processcess = self.determine_max_proc() - 1
+        print(f"starting with number of processes: {number_of_processcess} ")
+        p = Pool(number_of_processcess)
+        p.map(self.exp_para_parseSql, self.allfiles )
+    
+    def determine_max_proc(self):
+        return cpu_count()
 
     def unitendtest(self):
         #unintend
@@ -69,18 +86,25 @@ class Runner(object):
     def start(self):
         #self.allfiles = self.findFiles()
         self.parseSql()
-        self.insertdep()
-        #self.bulkinsertdep()
+        #self.para_parseSql()
+        #self.insertdep()
+        self.bulkinsertdep()
 
 
 
 if __name__ == "__main__":
+    starttime = time.time()
     c = Runner()
     c.findFiles()
     #c.unitendtest()
     #c.parseCTE()
     print( c.start() )
+    endtime = time.time()
+    print('Time needed:', endtime - starttime )
     # print(c.parseSql() )
+    
+
+
 
 
 
