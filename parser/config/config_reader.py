@@ -1,9 +1,10 @@
 import json
 import os
 from pathlib import Path, WindowsPath
+from util.logger_service import LoggerMixin
 
 
-class Configuration(object):
+class Configuration(LoggerMixin):
     def __init__(self, filename:str):
         self.abspath = os.path.dirname(os.path.abspath(__file__))
         self.filename = filename
@@ -18,7 +19,7 @@ class Configuration(object):
             with open(self.configfilepath) as json_data_file:
                 return json.load(json_data_file)
         except Exception as e:
-            print(f"Cannot open file {self.filename}. See this error: {e}")
+            self.logger.info(f"Cannot open file {self.filename}. See this error: {e}")
 
     def get_sql_directory(self):
         """
