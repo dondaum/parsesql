@@ -8,13 +8,6 @@ class FileFinder(LoggerMixin):
         self.targetdir =  Config.sqldir
 
     def getListOfFiles(self, dirName=None):
-        #self.logger.info('Start looking for files')
-        # create a list of file and sub directories 
-        # names in the given directory
-        # if dirName:
-        #     self.logger.info('There is a direname')
-        # if self.targetdir:
-        #     self.logger.info('i chosse the instance variable')
         dirName = dirName or self.targetdir
         listOfFile = os.listdir(dirName)
         allFiles = list()
