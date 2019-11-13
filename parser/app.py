@@ -26,47 +26,39 @@ from main.database.db_engine import Session
 from main.database.models import TableDependency
 from main.executers import SequentialExecuter, MultiProcessingExecuter
 import uuid
-import cProfile
 import time
 
 
 class Runner(object):
-    def __init__(self, parallelism=0):
+    def __init__(self, parallelism=0, bulk_load=True):
         self.allfiles = None
         self.dependencies = list()
         self.parallelism = parallelism
-        self.executer = self.get_executer()
+        self.bulk_load = bulk_load
+        self.executer = self._get_executer()
 
-    def get_executer(self):
+    def _get_executer(self):
         if self.parallelism <= 0:
             return SequentialExecuter()
         else:
             return MultiProcessingExecuter()
 
-    def parseSql(self):
+    def parseSql(self) -> None:
+        self.findFiles()
         self.executer.to_parse_files = self.allfiles
         result = self.executer.run()
         self.dependencies = result
      
-    def findFiles(self):    
+    def findFiles(self) -> None:    
         self.allfiles = FileFinder().getListOfFiles()
 
-    def unitendtest(self):
-        #unintend
-        for file in self.allfiles:
-            #ParseSql(file=file).parseCommaCTEs()
-            ParseSql(file=file).debugger()
-    
-    def parseCTE(self):
-        for file in self.allfiles:
-            #ParseSql(file=file).parseCommaCTEs()
-            ParseSql(file=file).newparseCommaCTEs()
+    def _data_load(self):
+        if self.bulk_load:
+            self._bulkinsertdep()
+        else:
+            self._insertdep()
 
-    def parseCreateName(self):
-        for file in self.allfiles:
-            ParseSql(file=file).getCreateName()
-
-    def insertdep(self):
+    def _insertdep(self) -> None:
         session = Session()
         for sqlobject in self.dependencies:
             for table in sqlobject['tables']:
@@ -79,15 +71,9 @@ class Runner(object):
                 session.commit()
         session.close()
 
-
-    def bulkinsertdep(self):
-        bulkinsertlimi = 100
+    def _bulkinsertdep(self) -> None:
         session = Session()
         bulkinsertobjects = list()
-
-        if not self.dependencies:
-            print('There are no table dependencies.')
-
         for sqlobject in self.dependencies:
             for table in sqlobject['tables']:
                 dbentry = TableDependency( objectName = sqlobject['name'] ,
@@ -96,37 +82,19 @@ class Runner(object):
                                            uuid = str(uuid.uuid1())
                                         )
                 bulkinsertobjects.append(dbentry)
-        
         session.bulk_save_objects(bulkinsertobjects)
         session.commit()
         session.close()
 
-
-
-    def start(self):
-        self.findFiles()
-
-        #self.allfiles = self.findFiles()
-
+    def start(self) -> None:
         self.parseSql()
-        #self.para_parseSql()
-        #self.insertdep()
-        #self.bulkinsertdep()
-
+        self._data_load()
 
 if __name__ == "__main__":
     starttime = time.time()
-    c = Runner()
-    c.start()
-    #c.findFiles()
-    #c.unitendtest()
-    #c.parseCTE()
-    
-    #print( c.start() )
+    Runner(parallelism=0, bulk_load=True).start()
     endtime = time.time()
     print('Time needed:', endtime - starttime )
-    
-    # print(c.parseSql() )
     
 
 

@@ -1,0 +1,11 @@
+{
+    "sqldirectory": "C:\\A\\User\\Desktop\\B",
+    "file_extension": "sql",
+    "Snowflake_Account": {
+        "user": "user",
+        "password": "password",
+        "account": "account", 
+        "database": "database",
+        "schema": "schema"
+    }
+}
