@@ -92,7 +92,7 @@ class Runner(object):
 
 if __name__ == "__main__":
     starttime = time.time()
-    Runner(parallelism=0, bulk_load=True).start()
+    Runner(parallelism=1, bulk_load=True).start()
     endtime = time.time()
     print('Time needed:', endtime - starttime )
     
