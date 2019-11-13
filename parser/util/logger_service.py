@@ -20,32 +20,17 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from config.config_reader import Config
-from util.logger_service import LoggerMixin
-import os
+import logging
 
-class FileFinder(LoggerMixin):
-    def __init__(self):
-        self.type      =  Config.file_extension
-        self.targetdir =  Config.sqldir
+class LoggerMixin(object):
 
-    def getListOfFiles(self, dirName=None):
-        dirName = dirName or self.targetdir
-        listOfFile = os.listdir(dirName)
-        allFiles = list()
+    FORMAT = '[%(asctime)s] [%(processName)-10s] [%(name)s] [%(levelname)s] -> %(message)s'
+    logging.basicConfig(format=FORMAT, level=logging.INFO)
 
-        # Iterate over all the entries
-        for entry in listOfFile:
-            # Create full path
-            fullPath = os.path.join(dirName, entry)
-            # If entry is a directory then get the list of files in this directory 
-            if os.path.isdir(fullPath):
-                allFiles = allFiles + self.getListOfFiles(fullPath)
-            else:
-                allFiles.append(fullPath)
-        # filter out sql files
-        allFiles = [file for file in allFiles if file.endswith(f".{self.type}")]
-        if allFiles:
-            self.logger.info(f'Recursive Search found files. Number of files found: {len(allFiles)}')
-
-        return allFiles
+    @property
+    def logger(self):
+        name = '.'.join([
+            self.__module__,
+            self.__class__.__name__
+        ])
+        return logging.getLogger(name)

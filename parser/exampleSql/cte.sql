@@ -13,7 +13,13 @@ WITH cte_sales_amounts AS (
         first_name + ' ' + last_name,
         year(order_date)
 )
- 
+, sub AS (
+        SELECT    
+        first_name + ' ' + last_name, 
+        SUM(quantity * list_price * (1 - discount)),
+        YEAR(order_date)
+    FROM A
+)
 SELECT
     staff, 
     sales
