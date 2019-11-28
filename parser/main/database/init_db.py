@@ -20,8 +20,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from db_engine import Session, db_engine
-from models import TableDependency, Base
+from .db_engine import Session, db_engine
+from .models import TableDependency, Base
 
 Base.metadata.drop_all(db_engine)
 # 1 - generate database schema
