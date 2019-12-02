@@ -45,7 +45,8 @@ class DatabaseEngine():
                                 password= Config.snowflake_account['password'],
                                 account=Config.snowflake_account['account'],
                                 database=Config.snowflake_account['database'],
-                                schema = Config.snowflake_account['schema']
+                                schema = Config.snowflake_account['schema'],
+                                warehouse = Config.snowflake_account['warehouse']
                         )
                         , echo=True
 
