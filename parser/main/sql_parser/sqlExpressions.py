@@ -106,6 +106,7 @@ reservedSqlExpressions = [
     'TRUE',
     'UNION',
     'UNIQUE',
+    'UNPIVOT',
     'UPDATE',
     'USING',
     'VALUES',
