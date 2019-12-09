@@ -1,5 +1,4 @@
 {
-    "sqldirectory": "parser/exampleSql",
     "sqldirectory": "C:\\A\\User\\Desktop\\B",
     "file_extension": "sql",
     "Snowflake_Account": {
