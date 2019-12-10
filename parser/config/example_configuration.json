@@ -6,6 +6,7 @@
         "password": "password",
         "account": "account", 
         "database": "database",
-        "schema": "schema"
+        "schema": "schema",
+        "warehouse": "warehouse"
     }
 }

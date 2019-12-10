@@ -27,8 +27,8 @@ from snowflake.sqlalchemy import URL
 from config.config_reader import Config
 
 class DatabaseEngine():
-        def __init__(self, strategy='sqllite'):
-                self.strategy = strategy
+        def __init__(self):
+                self.strategy = Config.strategy
 
         def get_engine(self):
                 if self.strategy == 'sqllite':
@@ -45,12 +45,13 @@ class DatabaseEngine():
                                 password= Config.snowflake_account['password'],
                                 account=Config.snowflake_account['account'],
                                 database=Config.snowflake_account['database'],
-                                schema = Config.snowflake_account['schema']
-                        )
+                                schema = Config.snowflake_account['schema'],
+                                warehouse = Config.snowflake_account['warehouse']
+                                )
                         , echo=True
+                )
 
-                        )
-db_engine = DatabaseEngine(strategy='snowflake').get_engine()
+db_engine = DatabaseEngine().get_engine()
 Session = sessionmaker(bind=db_engine)
 
 
