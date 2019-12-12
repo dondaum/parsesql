@@ -1,6 +1,7 @@
 {
     "sqldirectory": "C:\\A\\User\\Desktop\\B",
     "file_extension": "sql",
+    "strategy": "sqllite",
     "Snowflake_Account": {
         "user": "user",
         "password": "password",
