@@ -1,15 +1,20 @@
-Create or replace view ae_aml.aml_v_product (album_name, COL_DIFF) AS
-with album_info_1976 as 
-(
-    select m.album_ID, m.album_name, b.band_name
-      from music_albums as m inner join music_bands as b
-      where m.band_id = b.band_id and album_year = 1976
-),
-journey_album_info_1976 as 
-(
-    select *
-      from album_info_1976 
-      where band_name = 'Journey'
-)
-select album_name, band_name 
-   from Journey_album_info_1976;
+CREATE VIEW employee_hierarchy 
+(title, employee_ID, manager_ID, "MGR_EMP_ID (SHOULD BE SAME)", "MGR TITLE") AS (
+   WITH RECURSIVE employee_hierarchy_cte (title, employee_ID, manager_ID, "MGR_EMP_ID (SHOULD BE SAME)", "MGR TITLE") AS (
+      -- Start at the top of the hierarchy ...
+      SELECT title, employee_ID, manager_ID, NULL AS "MGR_EMP_ID (SHOULD BE SAME)", 'President' AS "MGR TITLE"
+        FROM employees
+        WHERE title = 'President'
+      UNION ALL
+      -- ... and work our way down one level at a time.
+      SELECT employees.title, 
+             employees.employee_ID, 
+             employees.manager_ID, 
+             employee_hierarchy_cte.employee_id AS "MGR_EMP_ID (SHOULD BE SAME)", 
+             employee_hierarchy_cte.title AS "MGR TITLE"
+        FROM employees INNER JOIN employee_hierarchy_cte
+       WHERE employee_hierarchy_cte.employee_ID = employees.manager_ID
+   )
+   SELECT * 
+      FROM employee_hierarchy_cte
+);
