@@ -17,5 +17,6 @@ python -m main.database.init_db
 6. Configure the Runner class (multiprocessing, parsing vs. dataloading)
 7. Run the main module with:
 ```
+cd parser/
 python parser/app.py
 ```
