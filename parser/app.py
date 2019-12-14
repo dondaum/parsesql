@@ -88,7 +88,7 @@ class Runner(object):
 
     def start(self) -> None:
         self.parseSql()
-        #self._data_load()
+        self._data_load()
 
 if __name__ == "__main__":
     starttime = time.time()
