@@ -22,6 +22,7 @@
 
 import json
 import os
+import sys
 from pathlib import Path, WindowsPath
 from util.logger_service import LoggerMixin
 
@@ -42,8 +43,10 @@ class Configuration(LoggerMixin):
         try:
             with open(self.configfilepath) as json_data_file:
                 return json.load(json_data_file)
-        except Exception as e:
-            self.logger.info(f"Cannot open file {self.filename}. See this error: {e}")
+        except FileNotFoundError as e:
+            self.logger.info(f"Cannot find file {self.filename}. Please check if file existing. "
+                             f"See this error: {e}")
+            sys.exit()
 
     def get_sql_directory(self):
         """
