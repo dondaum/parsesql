@@ -268,6 +268,15 @@ class BaseSqlTextCleaner(object):
     def removeLinebreaks(self) -> None:
         self.text = self.text.replace('\n','')
 
+    def removeAllAfterStartParenthesis(self) -> None:
+        """
+        String mehtod that removes all characters after the opening paranthesis
+        """
+        paranthesis = '('
+        if paranthesis in self.text:
+            pos = self.text.find(paranthesis)
+            self.text = self.text[:pos]
+
 class LigthSqlTextCleaner(BaseSqlTextCleaner):
 
     def __init__(self, text: str):
@@ -352,6 +361,7 @@ class CreateSqlTextCleaner(BaseSqlTextCleaner):
         self.removeLeftWhiteSpace()
         self.removeAllWhiteSpaceFromString()
         self.removeLinebreaks()
+        self.removeAllAfterStartParenthesis()
         self.upperStr()
         return self.text
 
