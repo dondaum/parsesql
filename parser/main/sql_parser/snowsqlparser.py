@@ -106,6 +106,13 @@ class ParseSql(LoggerMixin):
             allcommactes.append(CTESqlTextCleaner(text=raw).start())
         return allcommactes
 
+    def _get_recursive_cte_names(self) -> list:
+        allrec = list()
+        for cte in re.finditer(r"^\,(?:.*)(\n?\($)", self.filecontent, re.MULTILINE):
+            raw = cte.group(0)
+            allrec.append(RecursiveSqlTextCleaner(text=raw).start())
+        return allrec
+
     def _parse_statement(self, stat: str) -> list:
         statement = stat
         statementsFound = list()
@@ -231,12 +238,13 @@ class ParseSql(LoggerMixin):
         objektName = None
         tables =  [objekt for objekt in self._parseFromEnd() if objekt not in self._get_with_name() 
                                                                       and objekt not in self._get_cte_names()
+                                                                      and objekt not in self._get_recursive_cte_names()
                                                                       and objekt not in duallist 
                                                                       and objekt not in technicalParameter  
                                                                     ]                                                         
         if self._get_create_name():
             objektName = self._get_create_name()
-        final_dict = {'filename':self.filename, 'name':objektName, 'tables': tables}
+        final_dict = {'filename':self.filename, 'name':objektName, 'tables': tables }
         self.logger.info(f'Parsing of a file completed: {final_dict}')
         return final_dict
 
@@ -362,6 +370,29 @@ class CreateSqlTextCleaner(BaseSqlTextCleaner):
         self.removeAllWhiteSpaceFromString()
         self.removeLinebreaks()
         self.removeAllAfterStartParenthesis()
+        self.upperStr()
+        return self.text
+
+class RecursiveSqlTextCleaner(BaseSqlTextCleaner):
+
+    def __init__(self, text: str):
+        self.text = text
+
+    def removeAllAfterAs(self) -> None:
+        expr = ' AS'
+        if expr in self.text:
+            pos = self.text.find(expr)
+            self.text = self.text[:pos]
+
+    def start(self) -> str:
+        """
+        Main control method that starts text cleaning and transforming
+        """
+        self.removeAllAfterAs()
+        self.removeAllAfterStartParenthesis()
+        self.removeCommaCharacters()
+        self.removeLeftWhiteSpace()
+        self.removeAllWhiteSpaceFromString()
         self.upperStr()
         return self.text
 
