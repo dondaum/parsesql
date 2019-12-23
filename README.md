@@ -1,4 +1,4 @@
-# parsesql
+# parsesql ![badge](https://github.com/dondaum/parsesql/workflows/parsesql/badge.svg)
 A small python based sql parser focusing on finding table dependencies within database views. Currently only working with Snowflake ANSI Sql
 
 The current implementation handles the parser as an seperate app that can be used to parse sql files. This is not a stable version. Within the 
