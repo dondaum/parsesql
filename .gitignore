@@ -3,5 +3,6 @@
 *.pyc
 #setup
 UNKNOWN.egg-info
+.github
 parser/config/configuration.json
 parser/config/test.json
