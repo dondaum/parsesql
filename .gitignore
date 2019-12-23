@@ -1,5 +1,7 @@
 *.db
 .vscode
 *.pyc
+#setup
+UNKNOWN.egg-info
 parser/config/configuration.json
 parser/config/test.json
