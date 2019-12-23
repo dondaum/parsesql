@@ -1,4 +1,5 @@
 *.db
 .vscode
+.github
 parser/config/configuration.json
 parser/config/test.json
