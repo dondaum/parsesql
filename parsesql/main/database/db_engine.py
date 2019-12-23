@@ -20,11 +20,11 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from sqlalchemy import *
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from snowflake.sqlalchemy import URL
 from config.config_reader import Config
+from sqlalchemy import create_engine
 
 class DatabaseEngine():
         def __init__(self):

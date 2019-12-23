@@ -11,12 +11,12 @@ next month the goal is to translate that app in a pip package.
 4. Configure the SQLAlchemy engine
 5. Create the target database table (Sqllite or Snowflake engine) with SQLAlchemy. Therefore run: 
 ```
-cd parser/
+cd parsesql/
 python -m main.database.init_db
 ```
 6. Configure the Runner class (multiprocessing, parsing vs. dataloading)
 7. Run the main module with:
 ```
-cd parser/
-python parser/app.py
+cd parsesql/
+python app.py
 ```

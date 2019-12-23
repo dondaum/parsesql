@@ -23,7 +23,7 @@
 import json
 import os
 import sys
-from pathlib import Path, WindowsPath
+from pathlib import Path
 from util.logger_service import LoggerMixin
 
 
