@@ -39,6 +39,10 @@ class Logger(unittest.TestCase):
                 "database": "database",
                 "schema": "schema",
                 "warehouse": "warehouse",
+            },
+            logging={
+                "format": '[%(asctime)s] [%(processName)-10s] [%(name)s] [%(levelname)s] -> %(message)s',
+                "level": "INFO",
             }
         )
 
@@ -46,9 +50,9 @@ class Logger(unittest.TestCase):
     def setUpClass(cls):
         Logger.config.create()
 
-    # @classmethod
-    # def tearDownClass(cls):
-    #     Logger.config.create()
+    @classmethod
+    def tearDownClass(cls):
+        Logger.config.create()
 
     def test_if_logger_class_exisit(self):
         """

@@ -35,6 +35,7 @@ class Configuration(LoggerMixin):
         self.data = self.read()
         self.sqldir = self.get_sql_directory()
         self.file_extension = self.data['file_extension']
+        self.logger_config = self.data['logging']
         self.strategy = self.data['strategy']
         if self.strategy == "snowflake":
             self.snowflake_account = self.data['Snowflake_Account']

@@ -21,11 +21,16 @@
 # SOFTWARE.
 
 import logging
+#from parsesql.config.config_reader import Config
+
+#print(type(Config.logger_config))
+
 
 class LoggerMixin(object):
 
     FORMAT = '[%(asctime)s] [%(processName)-10s] [%(name)s] [%(levelname)s] -> %(message)s'
     logging.basicConfig(format=FORMAT, level=logging.INFO)
+    #logging.config.dictConfig(logging_config)
 
     @property
     def logger(self):

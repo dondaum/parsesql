@@ -20,7 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from config.config_reader import Config
+from parsesql.config.config_reader import Config
 from parsesql.util.logger_service import LoggerMixin
 import os
 
