@@ -23,7 +23,7 @@
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from snowflake.sqlalchemy import URL
-from config.config_reader import Config
+from parsesql.config.config_reader import Config
 from sqlalchemy import create_engine
 
 class DatabaseEngine():

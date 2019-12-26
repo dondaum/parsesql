@@ -20,11 +20,11 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from main.sql_parser.snowsqlparser import ParseSql
-from main.sql_parser.file_finder import FileFinder
-from main.database.db_engine import Session
-from main.database.models import TableDependency
-from main.executers import SequentialExecuter, MultiProcessingExecuter
+from parsesql.main.sql_parser.snowsqlparser import ParseSql
+from parsesql.main.sql_parser.file_finder import FileFinder
+from parsesql.main.database.db_engine import Session
+from parsesql.main.database.models import TableDependency
+from parsesql.main.executers import SequentialExecuter, MultiProcessingExecuter
 import uuid
 import time
 

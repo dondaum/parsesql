@@ -24,7 +24,7 @@ import json
 import os
 import sys
 from pathlib import Path
-from util.logger_service import LoggerMixin
+from parsesql.util.logger_service import LoggerMixin
 
 
 class Configuration(LoggerMixin):

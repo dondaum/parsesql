@@ -21,7 +21,7 @@
 # SOFTWARE.
 
 from config.config_reader import Config
-from util.logger_service import LoggerMixin
+from parsesql.util.logger_service import LoggerMixin
 import os
 
 class FileFinder(LoggerMixin):

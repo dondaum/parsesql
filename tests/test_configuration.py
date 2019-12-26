@@ -1,5 +1,5 @@
 import unittest
-from config import config_reader
+from parsesql.config import config_reader
 from pathlib import Path
 
 class ConfigurationTest(unittest.TestCase):

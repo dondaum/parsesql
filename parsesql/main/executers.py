@@ -1,5 +1,5 @@
 from multiprocessing import Pool, cpu_count, Queue
-from main.sql_parser.snowsqlparser import ParseSql
+from parsesql.main.sql_parser.snowsqlparser import ParseSql
 
 class BaseExecuter(object):
     pass
