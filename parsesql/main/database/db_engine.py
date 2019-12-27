@@ -26,6 +26,7 @@ from snowflake.sqlalchemy import URL
 from parsesql.config.config_reader import Config
 from sqlalchemy import create_engine
 
+
 class DatabaseEngine():
         def __init__(self):
                 self.strategy = Config.strategy

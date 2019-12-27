@@ -2,6 +2,9 @@ import unittest
 import json
 import os
 from parsesql.util import logger_service
+from parsesql import config
+
+CONFIGPATH = os.path.dirname(config.__file__)
 
 
 class JsonConfigGenerator():
@@ -10,10 +13,8 @@ class JsonConfigGenerator():
             setattr(self, key, value)
 
     def _get_filepath(self):
-        from parsesql import config
         jsonname = 'configuration.json'
-        configpath = os.path.dirname(config.__file__)
-        return os.path.join(configpath, jsonname)
+        return os.path.join(CONFIGPATH, jsonname)
 
     def create(self):
         with open(self._get_filepath(), 'w') as json_file:
@@ -28,7 +29,13 @@ class JsonConfigGenerator():
 
 class Logger(unittest.TestCase):
 
-    config = JsonConfigGenerator(
+    @classmethod
+    def setUpClass(cls):
+        Logger.create_config().create()
+
+    @staticmethod
+    def create_config(level="INFO"):
+        config = JsonConfigGenerator(
             sqldirectory="/Users/sebastiandaum/Desktop/views",
             file_extension="sql",
             strategy="sqllite",
@@ -42,19 +49,12 @@ class Logger(unittest.TestCase):
             },
             logging={
                 "format": '[%(asctime)s] [%(processName)-10s] [%(name)s] [%(levelname)s] -> %(message)s',
-                "level": "INFO",
+                "level": f"{level}",
             }
         )
+        return config
 
-    @classmethod
-    def setUpClass(cls):
-        Logger.config.create()
-
-    @classmethod
-    def tearDownClass(cls):
-        Logger.config.create()
-
-    def test_if_logger_class_exisit(self):
+    def test_if_logger_class_exist(self):
         """
         test if a logging class with the correct name exist
         """
@@ -72,4 +72,11 @@ class Logger(unittest.TestCase):
         """
         test if a given logging level in config file can change level
         """
-        pass
+        # CRITICAL 50, ERROR 40, WARNING 30, INFO 20, DEBUG 10, NOTESET 0
+        self.create_config(level="ERROR").create()
+        log = logger_service.LoggerMixin()
+        loglevel = log.logger.getEffectiveLevel()
+        self.create_config().create()
+
+        self.assertEqual(loglevel, 40)
+

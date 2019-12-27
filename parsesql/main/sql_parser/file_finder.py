@@ -24,6 +24,7 @@ from parsesql.config.config_reader import Config
 from parsesql.util.logger_service import LoggerMixin
 import os
 
+
 class FileFinder(LoggerMixin):
     def __init__(self):
         self.type      =  Config.file_extension

@@ -9,8 +9,8 @@
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
 
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
 
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -21,16 +21,12 @@
 # SOFTWARE.
 
 import logging
-#from parsesql.config.config_reader import Config
-
-#print(type(Config.logger_config))
+import logging.config
+from parsesql.config.config_reader import Config 
 
 
 class LoggerMixin(object):
-
-    FORMAT = '[%(asctime)s] [%(processName)-10s] [%(name)s] [%(levelname)s] -> %(message)s'
-    logging.basicConfig(format=FORMAT, level=logging.INFO)
-    #logging.config.dictConfig(logging_config)
+    logging.basicConfig(**Config.logger_config['Logging'])
 
     @property
     def logger(self):

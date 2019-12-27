@@ -24,18 +24,17 @@ import json
 import os
 import sys
 from pathlib import Path
-from parsesql.util.logger_service import LoggerMixin
 
 
-class Configuration(LoggerMixin):
-    def __init__(self, filename: str):
+class Configuration():
+    def __init__(self, filename: str = 'configuration.json'):
         self.abspath = os.path.dirname(os.path.abspath(__file__))
         self.filename = filename
         self.configfilepath = os.path.join(self.abspath, self.filename)
         self.data = self.read()
         self.sqldir = self.get_sql_directory()
         self.file_extension = self.data['file_extension']
-        self.logger_config = self.data['logging']
+        self.logger_config = {"Logging": self.data['logging']}
         self.strategy = self.data['strategy']
         if self.strategy == "snowflake":
             self.snowflake_account = self.data['Snowflake_Account']
@@ -45,9 +44,9 @@ class Configuration(LoggerMixin):
             with open(self.configfilepath) as json_data_file:
                 return json.load(json_data_file)
         except FileNotFoundError as e:
-            self.logger.info(f"Cannot find file {self.filename}. "
-                             f"Please check if file existing. "
-                             f"See this error: {e}")
+            print(f"Cannot find file {self.filename}. "
+                  f"Please check if file existing. "
+                  f"See this error: {e}")
             sys.exit()
 
     def get_sql_directory(self):
@@ -57,5 +56,4 @@ class Configuration(LoggerMixin):
         return Path(self.data['sqldirectory'])
 
 
-fname = 'configuration.json'
-Config = Configuration(filename=fname)
+Config = Configuration()
