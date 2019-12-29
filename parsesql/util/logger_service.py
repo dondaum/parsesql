@@ -22,7 +22,7 @@
 
 import logging
 import logging.config
-from parsesql.config.config_reader import Config 
+from parsesql.config.config_reader import Config
 
 
 class LoggerMixin(object):

@@ -36,7 +36,7 @@ class DatabaseEngine():
                         return self.get_engine_sqllite()
                 if self.strategy == 'snowflake':
                         return self.get_snowflake_engine()
-        
+              
         def get_engine_sqllite(self):
                 return create_engine('sqlite:///parsersql.db', echo=True)
         

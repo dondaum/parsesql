@@ -48,7 +48,8 @@ class Logger(unittest.TestCase):
                 "warehouse": "warehouse",
             },
             logging={
-                "format": '[%(asctime)s] [%(processName)-10s] [%(name)s] [%(levelname)s] -> %(message)s',
+                "format": '[%(asctime)s] [%(processName)-10s] [%(name)s] '
+                          '[%(levelname)s] -> %(message)s',
                 "level": f"{level}",
             }
         )
@@ -68,15 +69,15 @@ class Logger(unittest.TestCase):
         log = logger_service.LoggerMixin()
         self.assertEqual(log.logger.getEffectiveLevel(), 20)
 
-    def test_if_configuration_can_change_level(self):
+    def test_if_logger_logs_messages(self):
         """
-        test if a given logging level in config file can change level
+        test if the logger mixin logs messages
         """
-        # CRITICAL 50, ERROR 40, WARNING 30, INFO 20, DEBUG 10, NOTESET 0
-        self.create_config(level="ERROR").create()
+        error = False
         log = logger_service.LoggerMixin()
-        loglevel = log.logger.getEffectiveLevel()
-        self.create_config().create()
-
-        self.assertEqual(loglevel, 40)
-
+        try:
+            log.logger.info('This is a test message')
+        except AttributeError as e:
+            print(e)
+            error = True
+        self.assertEqual(error, False)
