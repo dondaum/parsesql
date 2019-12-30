@@ -20,14 +20,14 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from .db_engine import Session, db_engine
+from .db_engine import db_engine
 from .models import Base
 
-Base.metadata.drop_all(db_engine)
-# 1 - generate database schema
-Base.metadata.create_all(db_engine)
 
-# 2 - check connection
-session = Session()
-session.commit()
-session.close()
+def create_database():
+    Base.metadata.drop_all(db_engine)
+    Base.metadata.create_all(db_engine)
+
+
+if __name__ == "__main__":
+    create_database()

@@ -27,11 +27,11 @@ class JsonConfigGenerator():
             print(e)
 
 
-class Logger(unittest.TestCase):
+class LoggerTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        Logger.create_config().create()
+        LoggerTest.create_config().create()
 
     @staticmethod
     def create_config(level="INFO"):
@@ -81,3 +81,7 @@ class Logger(unittest.TestCase):
             print(e)
             error = True
         self.assertEqual(error, False)
+
+
+if __name__ == "__main__":
+    unittest.main()
