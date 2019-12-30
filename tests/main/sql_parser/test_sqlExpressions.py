@@ -20,15 +20,32 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+
 import unittest
+from parsesql.main.sql_parser import sqlExpressions
 
 
-def parsesql_test_suite():
-    """Test suite for parsesql tests"""
-    test_loader = unittest.TestLoader()
-    test_suite = test_loader.discover('.')
-    return test_suite
+class SqlExpressionTest(unittest.TestCase):
+
+    def test_if_all_global_variables_exist(self):
+        """
+        test if all sql expressions global variable exist
+        """
+        PARAMS = [
+            "RESERVED_SQL_EXPRESSIONS",
+            "END_STATEMENT",
+            "SPECIAL_CHARACTERS",
+            "DUAL_LIST",
+            "TECHNICAL_PARAM",
+        ]
+        module_variables = dir(sqlExpressions)
+        all_var_exist = True
+        for param in PARAMS:
+            if param not in module_variables:
+                all_var_exist = False
+
+        self.assertEqual(True, all_var_exist)
 
 
 if __name__ == "__main__":
-    unittest.TextTestRunner(verbosity=2).run(parsesql_test_suite())
+    unittest.main()

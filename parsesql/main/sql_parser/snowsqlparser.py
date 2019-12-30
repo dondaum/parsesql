@@ -9,8 +9,8 @@
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
 
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
 
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -22,9 +22,14 @@
 
 import os
 import re
-from .sqlExpressions import reservedSqlExpressions, specialCharacters, endstatement, duallist, technicalParameter
+from .sqlExpressions import (RESERVED_SQL_EXPRESSIONS,
+                             SPECIAL_CHARACTERS,
+                             END_STATEMENT,
+                             DUAL_LIST,
+                             TECHNICAL_PARAM
+                             )
 from parsesql.util.logger_service import LoggerMixin
-import textwrap
+
 
 class ParseSql(LoggerMixin):
     def __init__(self, file):
@@ -33,15 +38,16 @@ class ParseSql(LoggerMixin):
         self.filename = os.path.basename(self.file)
 
         self._base_clean_up()
-        self.allkeywordPos  = self._getParseNextAfterFrom()
+        self.allkeywordPos = self._getParseNextAfterFrom()
 
     def _readFile(self) -> str:
-        with open(self.file ,encoding = 'utf-8') as f:
+        with open(self.file, encoding='utf-8') as f:
             return f.read()
 
     def _base_clean_up(self) -> None:
         """
-        this method calls base instance method that prepare the file content for parsing
+        this method calls base instance method that prepare the file content
+        for parsing
         """
         # instance method that removes comments
         self._remove_comments()
@@ -55,27 +61,44 @@ class ParseSql(LoggerMixin):
         self._lstrip()
 
     def _remove_comments(self) -> None:
-        """ remove c-style comments.
-            text: blob of text with comments (can include newlines)
-            returns: text with comments removed
         """
-        self.filecontent = re.sub('\/\*[\s\S]*?\*\/|([^:]|^)\/\/.*$', '', self.filecontent )
-        self.filecontent = re.sub('--.*?\n', '', self.filecontent )
+        remove c-style comments.
+        text: blob of text with comments (can include newlines)
+        returns: text with comments removed
+        """
+        # TODO: Check if r escaping works as expected
+        self.filecontent = re.sub(r'\/\*[\s\S]*?\*\/|([^:]|^)\/\/.*$',
+                                  '', self.filecontent)
+        self.filecontent = re.sub('--.*?\n', '', self.filecontent)
 
     def _uppercase_sql_expressions(self) -> None:
         """
         Instance method that uppercase all keywords within the string
         """
-        for element in reservedSqlExpressions:
+        for element in RESERVED_SQL_EXPRESSIONS:
             if element.lower() in self.filecontent:
-                self.filecontent = re.sub(r"\b"+ element.lower()+ r"\b", element, self.filecontent)
+                self.filecontent = re.sub(r"\b" + element.lower() + r"\b",
+                                          element, self.filecontent)
+
+    def _get_all_reserved_sql_combinations(self, s: str):
+        """
+        Instance method that returns a generator for all possible string
+        combinations
+        """
+        if s == '':
+            yield ''
+            return
+        for rest in self._get_all_reserved_sql_combinations(s[1:]):
+            yield s[0].upper() + rest
+            if s[0].upper() != s[0].lower():
+                yield s[0].lower() + rest
 
     def _unintend(self) -> None:
         """
         Instance method standardize the intend of the file
         """
         data = self.filecontent.splitlines()
-        new_list = list()
+        new_list = []
         for row in data:
             cleaned_text = LigthSqlTextCleaner(text=row).start()
             new_list.append(cleaned_text)
@@ -83,15 +106,17 @@ class ParseSql(LoggerMixin):
 
     def _remove_header_view_col_definition(self):
         """
-        Instance method checks there is a header column definition, It removes it if true.
+        Instance method checks there is a header column definition, It removes
+        it if true.
         """
         firstline = self.filecontent.split('\n', 1)[0]
 
         if '(' in firstline:
-            startpos= self.filecontent.find('(')
-            endpos=   self.filecontent.find(')')
-            self.filecontent = self.filecontent[:startpos] + self.filecontent[endpos+1:]
-    
+            startpos = self.filecontent.find('(')
+            endpos = self.filecontent.find(')')
+            self.filecontent = (self.filecontent[:startpos] +
+                                self.filecontent[endpos+1:])
+
     def _lstrip(self) -> None:
         """
         Instance method for lstrip
@@ -100,14 +125,18 @@ class ParseSql(LoggerMixin):
 
     def _get_cte_names(self) -> list:
         allcommactes = list()
-        for cte in re.finditer(r"\w+(?=\s*(\bas\b|\bAS\b)[^/])", self.filecontent, re.MULTILINE):
+        for cte in re.finditer(r"\w+(?=\s*(\bas\b|\bAS\b)[^/])",
+                               self.filecontent,
+                               re.MULTILINE):
             raw = cte.group(0)
             allcommactes.append(CTESqlTextCleaner(text=raw).start())
         return allcommactes
 
     def _get_recursive_cte_names(self) -> list:
         allrec = list()
-        for cte in re.finditer(r"^\,(?:.*)(\n?\($)", self.filecontent, re.MULTILINE):
+        for cte in re.finditer(r"^\,(?:.*)(\n?\($)",
+                               self.filecontent,
+                               re.MULTILINE):
             raw = cte.group(0)
             allrec.append(RecursiveSqlTextCleaner(text=raw).start())
         return allrec
@@ -115,11 +144,11 @@ class ParseSql(LoggerMixin):
     def _parse_statement(self, stat: str) -> list:
         statement = stat
         statementsFound = list()
-        for m in re.finditer(r"\b"+ statement + r"\b", self.filecontent):
+        for m in re.finditer(r"\b" + statement + r"\b", self.filecontent):
             pos = {}
             pos['keyword'] = statement
             pos['startpos'] = m.start()
-            pos['endpos']   = m.end()
+            pos['endpos'] = m.end()
             statementsFound.append(pos)
         return statementsFound
 
@@ -134,7 +163,7 @@ class ParseSql(LoggerMixin):
         raw_str = ''
         for pos in parsePair:
             start = pos[0]
-            end   = pos[1]
+            end = pos[1]
             raw_str = self.filecontent[start:end]
             raw_str = raw_str.replace(" ", "")
         return raw_str
@@ -147,34 +176,35 @@ class ParseSql(LoggerMixin):
                 if pos['endpos'] < allpos:
                     parsePair.append([pos['endpos'], allpos])
                     break
-        parsePair = parsePair[:1] # only take first two positions
+        # only take first two positions
+        parsePair = parsePair[:1]
         raw_str = ''
         for pos in parsePair:
             start = pos[0]
-            end   = pos[1]
+            end = pos[1]
             raw_str = self.filecontent[start:end]
         return CreateSqlTextCleaner(text=raw_str).start()
 
     def _getParseNextAfterFrom(self) -> list:
-        startPositionsKeywords = list()
-        for keyword in reservedSqlExpressions:
-            for m in re.finditer(r"\b"+ keyword + r"\b", self.filecontent):
+        startPositionsKeywords = []
+        for keyword in RESERVED_SQL_EXPRESSIONS:
+            for m in re.finditer(r"\b" + keyword + r"\b", self.filecontent):
                 startPositionsKeywords.append(m.start())
-        for stat in endstatement:
+        for stat in END_STATEMENT:
             if stat in self.filecontent:
-                   pos = self.filecontent.find(stat)
-                   startPositionsKeywords.append(pos)
+                pos = self.filecontent.find(stat)
+                startPositionsKeywords.append(pos)
             else:
                 self.filecontent = self.filecontent + stat
                 pos = self.filecontent.find(stat)
                 startPositionsKeywords.append(pos)
 
-        startPositionsKeywords.sort()        
+        startPositionsKeywords.sort()
         return startPositionsKeywords
 
     def _parseFromEnd(self) -> list:
         allkeywordPos = self.allkeywordPos
-        parsePair = list()
+        parsePair = []
         keywordlist = ['FROM', 'JOIN']
         for searchkey in keywordlist:
             for pos in self._parse_statement(stat=searchkey):
@@ -185,8 +215,8 @@ class ParseSql(LoggerMixin):
         rawFroms = list()
         for pos in parsePair:
             start = pos[0]
-            end   = pos[1]
-            
+            end = pos[1]
+
             raw_str = self.filecontent[start:end]
             cleaned_text = TableSqlTextCleaner(text=raw_str).start()
             cleaned_text = self._detectOldJoin(raw=cleaned_text)
@@ -199,7 +229,7 @@ class ParseSql(LoggerMixin):
 
         rawFroms = self._removeAllAfterWhitespace(raw=rawFroms)
         return rawFroms
-    
+
     def removeCommaCharacters(self, raw: str) -> str:
         """
         TODO: Refactor the _parseFromEnd method in order to apply DRY
@@ -214,7 +244,7 @@ class ParseSql(LoggerMixin):
         if comma in raw:
             raw = raw.lstrip()
             raw = raw.split(',')
-            final_raw = list()
+            final_raw = []
             for e in raw:
                 e = e.lstrip()
                 final_raw.append(e)
@@ -223,43 +253,47 @@ class ParseSql(LoggerMixin):
 
     def _removeAllAfterWhitespace(self, raw: list) -> list:
         whitespace = ' '
-        newraw = list() 
+        newraw = []
         for element in raw:
             if whitespace in element:
                 pos = element.find(whitespace)
                 element = element[:pos]
                 newraw.append(element)
             else:
-                newraw.append(element) 
+                newraw.append(element)
         return newraw
 
     def getfinalFrom(self) -> dict:
         objektName = None
-        tables =  [objekt for objekt in self._parseFromEnd() if objekt not in self._get_with_name() 
-                                                                      and objekt not in self._get_cte_names()
-                                                                      and objekt not in self._get_recursive_cte_names()
-                                                                      and objekt not in duallist 
-                                                                      and objekt not in technicalParameter  
-                                                                    ]                                                         
+        tables = [objekt for objekt in self._parseFromEnd()
+                  if objekt not in self._get_with_name()
+                  and objekt not in self._get_cte_names()
+                  and objekt not in self._get_recursive_cte_names()
+                  and objekt not in DUAL_LIST
+                  and objekt not in TECHNICAL_PARAM]
+
         if self._get_create_name():
             objektName = self._get_create_name()
-        final_dict = {'filename':self.filename, 'name':objektName, 'tables': tables }
+        final_dict = {'filename': self.filename,
+                      'name': objektName,
+                      'tables': tables}
+
         self.logger.info(f'Parsing of a file completed: {final_dict}')
         return final_dict
 
 
 class BaseSqlTextCleaner(object):
-    
-    def removeSpecialCharacters(self) -> None:
-        for char in specialCharacters:
+
+    def removeSPECIAL_CHARACTERS(self) -> None:
+        for char in SPECIAL_CHARACTERS:
             if char in self.text:
                 self.text = self.text.replace(char, '')
-    
+
     def removeCommaCharacters(self) -> None:
         char = ','
         if char in self.text:
             self.text = self.text.replace(char, '')
-    
+
     def removeLeftWhiteSpace(self) -> str:
         self.text = self.text.lstrip()
 
@@ -271,9 +305,9 @@ class BaseSqlTextCleaner(object):
         if whitespace in self.text:
             pos = self.text.find(whitespace)
             self.text = self.text[:pos]
-    
+
     def removeLinebreaks(self) -> None:
-        self.text = self.text.replace('\n','')
+        self.text = self.text.replace('\n', '')
 
     def removeAllAfterStartParenthesis(self) -> None:
         """
@@ -283,6 +317,7 @@ class BaseSqlTextCleaner(object):
         if paranthesis in self.text:
             pos = self.text.find(paranthesis)
             self.text = self.text[:pos]
+
 
 class LigthSqlTextCleaner(BaseSqlTextCleaner):
 
@@ -300,8 +335,9 @@ class LigthSqlTextCleaner(BaseSqlTextCleaner):
     def removeRightWhiteSpace(self) -> str:
         self.text = self.text.rstrip()
 
+
 class TableSqlTextCleaner(BaseSqlTextCleaner):
-    
+
     def __init__(self, text: str):
         self.text = text
 
@@ -310,7 +346,7 @@ class TableSqlTextCleaner(BaseSqlTextCleaner):
         Main control method that starts text cleaning and transforming
         """
         self.removeAllAfterEndParenthesis()
-        self.removeSpecialCharacters()
+        self.removeSPECIAL_CHARACTERS()
         self.removeLinebreaks()
         self.removeLeftWhiteSpace()
         self.removeTabs()
@@ -322,15 +358,16 @@ class TableSqlTextCleaner(BaseSqlTextCleaner):
         instance method that replace tabs character with whitespace
         """
         self.text = self.text.replace('\t', ' ')
-    
+
     def removeAllAfterEndParenthesis(self) -> None:
         paranthesis = ')'
         if paranthesis in self.text:
             pos = self.text.find(paranthesis)
             self.text = self.text[:pos]
-    
+
+
 class CTESqlTextCleaner(BaseSqlTextCleaner):
-    
+
     def __init__(self, text: str):
         self.text = text
 
@@ -339,7 +376,7 @@ class CTESqlTextCleaner(BaseSqlTextCleaner):
         Main control method that starts text cleaning and transforming
         """
         self.remove_whitespace()
-        self.removeSpecialCharacters()
+        self.removeSPECIAL_CHARACTERS()
         self.removeCommaCharacters()
         self.removeReservedCharacters()
         self.removeLeftWhiteSpace()
@@ -348,8 +385,8 @@ class CTESqlTextCleaner(BaseSqlTextCleaner):
         return self.text
 
     def removeReservedCharacters(self) -> None:
-        for char in reservedSqlExpressions:
-            if re.match(r"\b"+ char + r"\b", self.text):
+        for char in RESERVED_SQL_EXPRESSIONS:
+            if re.match(r"\b" + char + r"\b", self.text):
                 self.text = self.text.replace(char, '')
 
     def remove_whitespace(self) -> None:
@@ -371,6 +408,7 @@ class CreateSqlTextCleaner(BaseSqlTextCleaner):
         self.removeAllAfterStartParenthesis()
         self.upperStr()
         return self.text
+
 
 class RecursiveSqlTextCleaner(BaseSqlTextCleaner):
 
@@ -394,7 +432,3 @@ class RecursiveSqlTextCleaner(BaseSqlTextCleaner):
         self.removeAllWhiteSpaceFromString()
         self.upperStr()
         return self.text
-
-
-
-    
