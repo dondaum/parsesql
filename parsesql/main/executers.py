@@ -36,7 +36,7 @@ class SequentialExecuter(BaseExecuter):
     def parse(self):
         dependencies = list()
         for file in self.to_parse_files:
-            dependencies.append(ParseSql(file=file).getfinalFrom())
+            dependencies.append(ParseSql(file=file).parse_dependencies())
         return dependencies
 
     def run(self):
@@ -52,7 +52,7 @@ class MultiProcessingExecuter(BaseExecuter):
         return cpu_count()
 
     def parse(self, file):
-        return ParseSql(file=file).getfinalFrom()
+        return ParseSql(file=file).parse_dependencies()
 
     def run(self):
         number_of_processcess = self.determine_max_proc() - 1

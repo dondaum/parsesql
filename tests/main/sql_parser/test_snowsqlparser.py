@@ -28,7 +28,10 @@ from tests import sql_file_container
 from parsesql.main.sql_parser.snowsqlparser import (ParseSql,
                                                     LigthSqlTextCleaner,
                                                     BaseSqlTextCleaner,
-                                                    TableSqlTextCleaner)
+                                                    TableSqlTextCleaner,
+                                                    CTESqlTextCleaner,
+                                                    RecursiveSqlTextCleaner,
+                                                    CreateSqlTextCleaner)
 from parsesql.main.sql_parser.sqlExpressions import (RESERVED_SQL_EXPRESSIONS,
                                                      END_STATEMENT)
 
@@ -409,16 +412,78 @@ class SnowSqlParserTest(unittest.TestCase):
         with_name = self.sql_parser_obj._get_with_name()
         self.assertEqual(expected, with_name)
 
-    def test_cte_name_parsing(self):
+    def test_all_cte_name_parsing(self):
         """
-        test if cte names can be parsed
+        test if all cte names can be parsed
         """
         all_ctes = []
-        expected = "album_info_1976"
 
-        all_ctes.append(expected)
+        expected_with = "album_info_1976"
+        all_ctes.append(expected_with)
+
+        parsed_ctes = self.sql_parser_obj._get_cte_names()
+        all_ctes.extend(parsed_ctes)
+
         parse_ctes = self.sql_parser_obj.get_all_cte_names()
         self.assertEqual(all_ctes, parse_ctes)
+
+    def test_cte_name_parsing(self):
+        """
+        test if all ctes starting with comma and name declaration can
+        be parsed
+        """
+        expected = ['OLD_JOIN']
+        parse_ctes = self.sql_parser_obj._get_cte_names()
+        check = False
+        for n in expected:
+            if n in parse_ctes:
+                check = True
+        self.assertEqual(check, True)
+
+    def test_recursive_cte_parsing(self):
+        """
+        test if recursive parsing of cte works
+        """
+        sql_statement = """
+            CREATE VIEW SAMP.V1 (COL_SUM, COL_DIFF) AS
+            with album_info_1976 as
+            (
+            select m.album_ID, m.album_name, b.band_name
+            from music_albums as m inner join music_bands as b
+            where m.band_id = b.band_id and album_year = 1976
+            )
+            , last_re (col1, col2)
+            AS
+            , forward_next (
+            col1,
+            col2
+            ) AS
+            ;
+        """
+        expected = ['LAST_RE', 'FORWARD_NEXT']
+        self.reload_raw_sql(string=sql_statement)
+        self.sql_parser_obj._base_clean_up()
+
+        get_res = self.sql_parser_obj._get_recursive_cte_names()
+        self.assertEqual(sorted(get_res), sorted(expected))
+
+    def test_create_name_parsing(self):
+        """
+        test if object name after CREATE can be parsed
+        """
+        expected = 'SAMP.V1'
+        name = self.sql_parser_obj._get_create_name()
+        self.assertEqual(expected, name)
+
+    def test_parse_dependencies(self):
+        """
+        test if object dependency can be parsed and returned as dict
+        """
+        expected_dict = {'filename': 'check2.sql',
+                         'name': 'SAMP.V1',
+                         'tables': ['CUSTOMERS', 'ORDERS', 'PRODUCT']}
+        parse_dep = self.sql_parser_obj.parse_dependencies()
+        self.assertEqual(expected_dict, parse_dep)
 
 
 class LigthSqlTextCleanerTest(unittest.TestCase):
@@ -463,6 +528,15 @@ class BaseSqlTextCleanerTest(unittest.TestCase):
         cleaner.rm_left_whitespace()
         self.assertEqual(cleaner.text, expected_txt)
 
+    def test_if_right_whitespace_is_removed(self):
+        """
+        test whitespace remove right site
+        """
+        expected_txt = ""
+        cleaner = BaseSqlTextCleaner(text=self.__class__.test_sql_text)
+        cleaner.rm_right_whitespace()
+        self.assertEqual(cleaner.text, expected_txt)
+
     def test_remove_special_characters(self):
         """
         test if special characters can be removed
@@ -497,6 +571,16 @@ class BaseSqlTextCleanerTest(unittest.TestCase):
         expected_txt = "  CREATE OR REPLACE VIEW ABS  AS "
         cleaner = BaseSqlTextCleaner(text=self.__class__.test_sql_text)
         cleaner.uppercase_str()
+        self.assertEqual(cleaner.text, expected_txt)
+
+    def test_remove_after_start_paran(self):
+        """
+        test if all after start paranthesis gets removed
+        """
+        uncleaned = ", recursive AS (asd)) uko"
+        expected_txt = ", recursive AS "
+        cleaner = BaseSqlTextCleaner(text=uncleaned)
+        cleaner.rm_after_start_paran()
         self.assertEqual(cleaner.text, expected_txt)
 
 
@@ -569,6 +653,88 @@ class TableSqlTextCleanerTest(unittest.TestCase):
                 check = False
 
         self.assertEqual(check, True)
+
+
+class CTESqlTextCleanerTest(unittest.TestCase):
+
+    def test_remove_whitespace(self):
+        """
+        test if whitespace is removed
+        """
+        uncleaned = " CREATE OR REPLACE VIEW ABS AS"
+        expected_txt = "CREATEORREPLACEVIEWABSAS"
+        cleaner = CTESqlTextCleaner(text=uncleaned)
+        cleaner.remove_whitespace()
+        self.assertEqual(cleaner.text, expected_txt)
+
+    def test_remove_reserved_characters(self):
+        """
+        test if reserved chracters can be removed
+        """
+        uncleaned = " CREATE OR REPLACE VIEW ABS AS"
+        expected_txt = "     ABS "
+        cleaner = CTESqlTextCleaner(text=uncleaned)
+        cleaner.rm_reserved_char()
+        self.assertEqual(cleaner.text, expected_txt)
+
+    def test_start_method(self):
+        """
+        test main start method that runs all transformation
+        """
+        uncleaned = [' old_join AS']
+        expected = ['OLD_JOIN']
+
+        clean_text = []
+        for word in uncleaned:
+            cleaner = CTESqlTextCleaner(text=word)
+            cleaner.start()
+            clean_text.append(cleaner.text)
+
+        target_str = ''.join(clean_text)
+        check = True
+        for objekt in expected:
+            if objekt in target_str:
+                check = True
+            else:
+                check = False
+
+        self.assertEqual(check, True)
+
+
+class RecursiveSqlTextCleanerTest(unittest.TestCase):
+
+    def test_remove_whitespace(self):
+        """
+        test if whitespace is removed
+        """
+        uncleaned = ", recursive AS (asd)"
+        expected_txt = ", recursive"
+        cleaner = RecursiveSqlTextCleaner(text=uncleaned)
+        cleaner.rm_from_as()
+        self.assertEqual(cleaner.text, expected_txt)
+
+    def test_start_method(self):
+        """
+        test main start method that runs all transformation
+        """
+        uncleaned = ", recursive AS (asd)"
+        expected_txt = "RECURSIVE"
+        cleaner = RecursiveSqlTextCleaner(text=uncleaned)
+        cleaner.start()
+        self.assertEqual(cleaner.text, expected_txt)
+
+
+class CreateSqlTextCleanerTest(unittest.TestCase):
+
+    def test_start_method(self):
+        """
+        test main start method that runs all transformation
+        """
+        uncleaned = " absc  AS "
+        expected_txt = "ABSC"
+        cleaner = CreateSqlTextCleaner(text=uncleaned)
+        cleaner.start()
+        self.assertEqual(cleaner.text, expected_txt)
 
 
 if __name__ == "__main__":

@@ -88,6 +88,7 @@ RESERVED_SQL_EXPRESSIONS = [
     'ORDER',
     'REGEXP',
     'RENAME',
+    'REPLACE',
     'REVOKE',
     'RIGHT',
     'RLIKE',
