@@ -181,9 +181,12 @@ class ParseSql(LoggerMixin):
             statementsFound.append(pos)
         return statementsFound
 
-    def _get_with_name(self):
+    def _get_with_name(self) -> str:
+        """
+        Get the first cte name declared by WITH
+        """
         allkeywordPos = self.allkeywordPos
-        parsePair = list()
+        parsePair = []
         for pos in self._parse_statement(stat='WITH'):
             for allpos in allkeywordPos:
                 if pos['endpos'] < allpos:
@@ -245,15 +248,15 @@ class ParseSql(LoggerMixin):
 
         for dependency in raw_dependencies:
             cleaned_text = TableSqlTextCleaner(text=dependency).start()
-            cleaned_text = self._detectOldJoin(raw=cleaned_text)
+            cleaned_text = self._detect_old_join(raw=cleaned_text)
 
             if isinstance(cleaned_text, list):
                 rawFroms.extend(cleaned_text)
             else:
-                cleaned_text = self.removeCommaCharacters(raw=cleaned_text)
+                cleaned_text = self.rm_comma(raw=cleaned_text)
                 rawFroms.append(cleaned_text)
 
-        rawFroms = self._removeAllAfterWhitespace(raw=rawFroms)
+        rawFroms = self._rm_after_whitespace(raw=rawFroms)
         return rawFroms
 
     def _parse_position_pair(self) -> list:
@@ -282,7 +285,7 @@ class ParseSql(LoggerMixin):
             rawFroms.append(self.filecontent[start:end])
         return rawFroms
 
-    def removeCommaCharacters(self, raw: str) -> str:
+    def rm_comma(self, raw: str) -> str:
         """
         TODO: Refactor the _parseFromEnd method in order to apply DRY
         """
@@ -291,7 +294,11 @@ class ParseSql(LoggerMixin):
             raw = raw.replace(char, '')
         return raw
 
-    def _detectOldJoin(self, raw: str) -> list:
+    def _detect_old_join(self, raw: str) -> list:
+        """
+        Instance method that checks if comma are in string and
+        seperate them if so. Else it returns the original string
+        """
         comma = ','
         if comma in raw:
             raw = raw.lstrip()
@@ -303,7 +310,11 @@ class ParseSql(LoggerMixin):
             return final_raw
         return raw
 
-    def _removeAllAfterWhitespace(self, raw: list) -> list:
+    def _rm_after_whitespace(self, raw: list) -> list:
+        """
+        Instance method that has a list input of strings, iterate through
+        and removes everythin after the first whitespace for each item
+        """
         whitespace = ' '
         newraw = []
         for element in raw:
@@ -316,9 +327,13 @@ class ParseSql(LoggerMixin):
         return newraw
 
     def getfinalFrom(self) -> dict:
+        """
+        Main method that parsing elements and returns the final result
+        dict
+        """
         objektName = None
         tables = [objekt for objekt in self._parseFromEnd()
-                  if objekt not in self._get_with_name()
+                  if objekt not in self.get_all_cte_names()
                   and objekt not in self._get_cte_names()
                   and objekt not in self._get_recursive_cte_names()
                   and objekt not in DUAL_LIST
@@ -333,28 +348,41 @@ class ParseSql(LoggerMixin):
         self.logger.info(f'Parsing of a file completed: {final_dict}')
         return final_dict
 
+    def get_all_cte_names(self) -> dict:
+        """
+        instance method that parse cte names from string
+        """
+        cte_names = []
+        # 1. find with name
+        with_name = self._get_with_name()
+        # 2. find all cte comma declartions
+        cte_names.append(with_name)
+        return cte_names
+
 
 class BaseSqlTextCleaner(object):
 
     def __init__(self, text: str):
         self.text = text
 
-    def removeSPECIAL_CHARACTERS(self) -> None:
+    def rm_special_characters(self) -> None:
         for char in SPECIAL_CHARACTERS:
             if char in self.text:
                 self.text = self.text.replace(char, '')
+        return self
 
-    def removeCommaCharacters(self) -> None:
+    def rm_comma(self) -> None:
         char = ','
         if char in self.text:
             self.text = self.text.replace(char, '')
 
-    def removeLeftWhiteSpace(self) -> str:
+    def rm_left_whitespace(self) -> str:
         self.text = self.text.lstrip()
         return self
 
-    def upperStr(self) -> None:
+    def uppercase_str(self) -> None:
         self.text = self.text.upper()
+        return self
 
     def removeAllWhiteSpaceFromString(self) -> None:
         whitespace = ' '
@@ -362,8 +390,9 @@ class BaseSqlTextCleaner(object):
             pos = self.text.find(whitespace)
             self.text = self.text[:pos]
 
-    def removeLinebreaks(self) -> None:
+    def rm_linebreaks(self) -> None:
         self.text = self.text.replace('\n', '')
+        return self
 
     def removeAllAfterStartParenthesis(self) -> None:
         """
@@ -384,7 +413,7 @@ class LigthSqlTextCleaner(BaseSqlTextCleaner):
         """
         Main control method that starts text cleaning and transforming
         """
-        self.removeLeftWhiteSpace().removeRightWhiteSpace()
+        self.rm_left_whitespace().removeRightWhiteSpace()
         return self.text
 
     def removeRightWhiteSpace(self) -> str:
@@ -401,25 +430,24 @@ class TableSqlTextCleaner(BaseSqlTextCleaner):
         """
         Main control method that starts text cleaning and transforming
         """
-        self.removeAllAfterEndParenthesis()
-        self.removeSPECIAL_CHARACTERS()
-        self.removeLinebreaks()
-        self.removeLeftWhiteSpace()
-        self.removeTabs()
-        self.upperStr()
+        self.rm_all_end_parenthesis().rm_special_characters() \
+            .rm_linebreaks().rm_left_whitespace().rm_tabs()   \
+            .uppercase_str()
         return self.text
 
-    def removeTabs(self) -> str:
+    def rm_tabs(self) -> str:
         """
         instance method that replace tabs character with whitespace
         """
         self.text = self.text.replace('\t', ' ')
+        return self
 
-    def removeAllAfterEndParenthesis(self) -> None:
+    def rm_all_end_parenthesis(self) -> None:
         paranthesis = ')'
         if paranthesis in self.text:
             pos = self.text.find(paranthesis)
             self.text = self.text[:pos]
+        return self
 
 
 class CTESqlTextCleaner(BaseSqlTextCleaner):
@@ -432,12 +460,12 @@ class CTESqlTextCleaner(BaseSqlTextCleaner):
         Main control method that starts text cleaning and transforming
         """
         self.remove_whitespace()
-        self.removeSPECIAL_CHARACTERS()
-        self.removeCommaCharacters()
+        self.rm_special_characters()
+        self.rm_comma()
         self.removeReservedCharacters()
-        self.removeLeftWhiteSpace()
+        self.rm_left_whitespace()
         self.removeAllWhiteSpaceFromString()
-        self.upperStr()
+        self.uppercase_str()
         return self.text
 
     def removeReservedCharacters(self) -> None:
@@ -458,11 +486,11 @@ class CreateSqlTextCleaner(BaseSqlTextCleaner):
         """
         Main control method that starts text cleaning and transforming
         """
-        self.removeLeftWhiteSpace()
+        self.rm_left_whitespace()
         self.removeAllWhiteSpaceFromString()
-        self.removeLinebreaks()
+        self.rm_linebreaks()
         self.removeAllAfterStartParenthesis()
-        self.upperStr()
+        self.uppercase_str()
         return self.text
 
 
@@ -483,8 +511,8 @@ class RecursiveSqlTextCleaner(BaseSqlTextCleaner):
         """
         self.removeAllAfterAs()
         self.removeAllAfterStartParenthesis()
-        self.removeCommaCharacters()
-        self.removeLeftWhiteSpace()
+        self.rm_comma()
+        self.rm_left_whitespace()
         self.removeAllWhiteSpaceFromString()
-        self.upperStr()
+        self.uppercase_str()
         return self.text

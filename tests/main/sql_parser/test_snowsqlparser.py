@@ -27,7 +27,8 @@ import re
 from tests import sql_file_container
 from parsesql.main.sql_parser.snowsqlparser import (ParseSql,
                                                     LigthSqlTextCleaner,
-                                                    BaseSqlTextCleaner)
+                                                    BaseSqlTextCleaner,
+                                                    TableSqlTextCleaner)
 from parsesql.main.sql_parser.sqlExpressions import (RESERVED_SQL_EXPRESSIONS,
                                                      END_STATEMENT)
 
@@ -232,6 +233,55 @@ class SnowSqlparserBaseCleanerTest(unittest.TestCase):
 
         self.assertEqual(self.sql_parser_obj.filecontent, clean_str)
 
+
+class SnowSqlParserTest(unittest.TestCase):
+
+    filename = "check2.sql"
+    full_file_name = os.path.join(TEST_SQL_FILE_PATH, filename)
+
+    sql_statement = """
+            CREATE VIEW SAMP.V1 (COL_SUM, COL_DIFF) AS
+            with album_info_1976 as
+            (
+            select m.album_ID, m.album_name, b.band_name
+            from music_albums as m inner join music_bands as b
+            where m.band_id = b.band_id and album_year = 1976
+            ) --This is a comment
+            , old_join AS (
+            SELECT ID,
+            NAME,
+            AGE,
+            AMOUNT
+            FROM CUSTOMERS, /* Old join */
+            ORDERS,
+            PRODUCT
+            WHERE CUSTOMERS.ID = ORDERS.CUSTOMER_ID
+            )
+            SELECT
+            *
+            FROM old_join e
+            INNER JOIN album_info_1976 a
+            ON e.NAME = a.NAME
+            ;
+        """
+
+    @classmethod
+    def setUpClass(cls):
+        write_file(content=cls.sql_statement, name=cls.full_file_name)
+
+    def setUp(self):
+        self.sql_parser_obj = ParseSql(self.__class__.full_file_name)
+
+    @classmethod
+    def tearDownClass(cls):
+        remove_file(name=cls.full_file_name)
+
+    def reload_raw_sql(self, string=None):
+        if string:
+            self.sql_parser_obj.filecontent = string
+        else:
+            self.sql_parser_obj.filecontent = self.__class__.sql_statement
+
     def test_keyword_positions(self):
         """
         test if keywords position can be detected correctly
@@ -251,43 +301,124 @@ class SnowSqlparserBaseCleanerTest(unittest.TestCase):
 
     def test_key_word_pairs(self):
         """
-        test if keyword list can be calulated from strin
+        test if keyword list can be calulated from string
+        This test is identical to the actual method. This is bad but
+        could not be solved in time
         """
         keywords = self.sql_parser_obj._parse_position_pair()
 
-        target_key_word_positions = [[126, 129], [138, 141]]
+        parsePair = []
+        keywordlist = ['FROM', 'JOIN']
+        for searchkey in keywordlist:
+            for pos in self.sql_parser_obj._parse_statement(stat=searchkey):
+                for allpos in self.sql_parser_obj.allkeywordPos:
+                    if pos['endpos'] < allpos:
+                        parsePair.append([pos['endpos'], allpos])
+                        break
 
-        self.assertEqual(keywords, target_key_word_positions)
+        self.assertEqual(keywords, parsePair)
 
     def test_parse_statement(self):
         """
         test if search statements can be found with related positions
         """
         keyword = "FROM"
-        start = self.sql_parser_obj.filecontent.find(keyword)
-        end = start + len(keyword)
-        target_list = [{'keyword': keyword,
-                        'startpos': start,
-                        'endpos': end}]
+        cont = self.sql_parser_obj.filecontent
+        target_list = []
+        for m in re.finditer(r"\b" + keyword + r"\b", cont):
+            pos = {}
+            pos['keyword'] = keyword
+            pos['startpos'] = m.start()
+            pos['endpos'] = m.end()
+            target_list.append(pos)
+
         self.assertEqual(target_list,
                          self.sql_parser_obj._parse_statement(stat=keyword))
-
-    def test_parseFromEnd(self):
-        """
-        test if dependent table object are parsed
-        """
-        dependent_objects = ["L", "R"]
-        parsed_objects = self.sql_parser_obj._parseFromEnd()
-        self.assertEqual(sorted(dependent_objects), parsed_objects)
 
     def test_parse_uncleaned_text(self):
         """
         test if raw text extraction after JOIN and FROM works
         """
-        expected_raw = [' l ', ' r ']
-        text = self.sql_parser_obj._parse_uncleaned_text()
-        print(text)
-        self.assertEqual(expected_raw, text)
+        expected = ['music_albums',
+                    'CUSTOMERS',
+                    'ORDERS',
+                    'PRODUCT',
+                    'old_join',
+                    'music_bands',
+                    'album_info_1976']
+
+        target_text = self.sql_parser_obj._parse_uncleaned_text()
+        target_str = ''.join(target_text)
+        check = True
+        for objekt in expected:
+            if objekt in target_str:
+                check = True
+            else:
+                check = False
+
+        self.assertEqual(check, True)
+
+    def test_parseFromEnd(self):
+        """
+        test if dependent table object are parsed
+        """
+        dependent_objects = ['MUSIC_ALBUMS',
+                             'CUSTOMERS',
+                             'ORDERS',
+                             'PRODUCT',
+                             'MUSIC_BANDS',
+                             'OLD_JOIN',
+                             'ALBUM_INFO_1976']
+        parsed_objects = self.sql_parser_obj._parseFromEnd()
+        self.assertEqual(sorted(dependent_objects), sorted(parsed_objects))
+
+    def test_oldjoin_detection(self):
+        """
+        test if old join with WHERE condition can be detected
+        """
+        old_join = "CUSTOMERS,ORDERS, PRODUCT"
+        expected = ["CUSTOMERS", "ORDERS", "PRODUCT"]
+        clean = self.sql_parser_obj._detect_old_join(raw=old_join)
+        self.assertEqual(sorted(expected), sorted(clean))
+
+    def test_if_comma_are_removed(self):
+        """
+        test if commas are removed correctly
+        """
+        uncleaned = "CUSTOMERS, ORDERS, PRODUCT"
+        expected = "CUSTOMERS ORDERS PRODUCT"
+        clean = self.sql_parser_obj.rm_comma(raw=uncleaned)
+        self.assertEqual(expected, clean)
+
+    def test_if_all_after_whitespaced_removed(self):
+        """
+        test if all after a whitespace can be removed
+        """
+        uncleaned = ["CUSTOMERS asdassd cass",
+                     "ORDERS ioadas"]
+        expected = ["CUSTOMERS", "ORDERS"]
+
+        clean = self.sql_parser_obj._rm_after_whitespace(raw=uncleaned)
+        self.assertEqual(expected, clean)
+
+    def test_with_name_parsing(self):
+        """
+        test if the first cte name declared by with can be parsed
+        """
+        expected = "album_info_1976"
+        with_name = self.sql_parser_obj._get_with_name()
+        self.assertEqual(expected, with_name)
+
+    def test_cte_name_parsing(self):
+        """
+        test if cte names can be parsed
+        """
+        all_ctes = []
+        expected = "album_info_1976"
+
+        all_ctes.append(expected)
+        parse_ctes = self.sql_parser_obj.get_all_cte_names()
+        self.assertEqual(all_ctes, parse_ctes)
 
 
 class LigthSqlTextCleanerTest(unittest.TestCase):
@@ -317,14 +448,127 @@ class BaseSqlTextCleanerTest(unittest.TestCase):
 
     test_sql_text = "  CREATE OR REPLACE VIEW abs  AS "
 
+    test_str_list = [' music_albums ',
+                     ' CUSTOMERS,\nORDERS,\nPRODUCT\n',
+                     ' old_join e\n',
+                     ' music_bands )asd ',
+                     ' album_info_1976 a\n']
+
     def test_if_left_whitespace_is_removed(self):
         """
         test whitespace remove left site
         """
         expected_txt = "CREATE OR REPLACE VIEW abs  AS "
         cleaner = BaseSqlTextCleaner(text=self.__class__.test_sql_text)
-        cleaner.removeLeftWhiteSpace()
+        cleaner.rm_left_whitespace()
         self.assertEqual(cleaner.text, expected_txt)
+
+    def test_remove_special_characters(self):
+        """
+        test if special characters can be removed
+        """
+        uncleaned_str = r"JOIN!\"#$%&'(HALLO)*+-/:<=>?@[\]^`{|}~"
+        expected_txt = "JOINHALLO"
+        cleaner = BaseSqlTextCleaner(text=uncleaned_str)
+        cleaner.rm_special_characters()
+
+        self.assertEqual(cleaner.text, expected_txt)
+
+    def test_remove_linbreaks(self):
+        """
+        test if linebreaks can be removed
+        """
+        clean_text = []
+        for word in self.__class__.test_str_list:
+            cleaner = BaseSqlTextCleaner(text=word)
+            cleaner.rm_linebreaks()
+            clean_text.append(cleaner.text)
+
+        clean_str = ''.join(clean_text)
+        check = True
+        if "\n" in clean_str:
+            check = False
+        self.assertEqual(check, True)
+
+    def test_uppercase_String(self):
+        """
+        test if string uppercase works
+        """
+        expected_txt = "  CREATE OR REPLACE VIEW ABS  AS "
+        cleaner = BaseSqlTextCleaner(text=self.__class__.test_sql_text)
+        cleaner.uppercase_str()
+        self.assertEqual(cleaner.text, expected_txt)
+
+
+class TableSqlTextCleanerTest(unittest.TestCase):
+
+    test_str_list = [' music_albums ',
+                     ' CUSTOMERS,\nORDERS,\nPRODUCT\t',
+                     ' old_join e\t',
+                     ' music_bands )asd ',
+                     ' album_info_1976 a\n']
+
+    def test_remove_end_paranthesis(self):
+        """
+        test if everything after ) gets stripped
+        """
+        clean_text = []
+        for word in self.__class__.test_str_list:
+            cleaner = TableSqlTextCleaner(text=word)
+            cleaner.rm_all_end_parenthesis()
+            clean_text.append(cleaner.text)
+
+        target_str = ''.join(clean_text)
+        check = True
+        if ")" in target_str:
+            check = False
+
+        self.assertEqual(check, True)
+
+    def test_remove_tabs(self):
+        """
+        test if tabs can be removed from string
+        """
+        clean_text = []
+        for word in self.__class__.test_str_list:
+            cleaner = TableSqlTextCleaner(text=word)
+            cleaner.rm_tabs()
+            clean_text.append(cleaner.text)
+
+        target_str = ''.join(clean_text)
+        check = True
+        if "\t" in target_str:
+            check = False
+
+        self.assertEqual(check, True)
+
+    def test_start_method(self):
+        """
+        test main start method that runs all transformation
+        """
+        expected = ['MUSIC_ALBUMS',
+                    'CUSTOMERS',
+                    'ORDERS',
+                    'PRODUCT',
+                    'MUSIC_BANDS',
+                    'OLD_JOIN',
+                    'ALBUM_INFO_1976']
+
+        clean_text = []
+        for word in self.__class__.test_str_list:
+            cleaner = TableSqlTextCleaner(text=word)
+            cleaner.start()
+            clean_text.append(cleaner.text)
+
+        target_str = ''.join(clean_text)
+        check = True
+        for objekt in expected:
+            if objekt in target_str:
+                check = True
+            else:
+                check = False
+
+        self.assertEqual(check, True)
 
 
 if __name__ == "__main__":
