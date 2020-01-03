@@ -34,7 +34,7 @@ class SequentialExecuter(BaseExecuter):
         self.to_parse_files = to_parse_files
 
     def parse(self):
-        dependencies = list()
+        dependencies = []
         for file in self.to_parse_files:
             dependencies.append(ParseSql(file=file).parse_dependencies())
         return dependencies

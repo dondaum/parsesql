@@ -258,6 +258,7 @@ class ParseSql(LoggerMixin):
                 rawFroms.append(cleaned_text)
 
         rawFroms = self._rm_after_whitespace(raw=rawFroms)
+        rawFroms = self._rm_empty_from_list(raw=rawFroms)
         return rawFroms
 
     def _parse_position_pair(self) -> list:
@@ -327,14 +328,21 @@ class ParseSql(LoggerMixin):
                 newraw.append(element)
         return newraw
 
+    def _rm_empty_from_list(self, raw: list) -> list:
+        """
+        removes empty strings from list
+        """
+        return list(filter(None, raw))
+
     def parse_dependencies(self) -> dict:
         """
         Main method that parsing elements and returns the final result
         dict
         """
         objektName = None
+        get_all_ctes = self.get_all_cte_names()
         tables = [objekt for objekt in self._parseFromEnd()
-                  if objekt not in self.get_all_cte_names()
+                  if objekt not in get_all_ctes
                   and objekt not in DUAL_LIST
                   and objekt not in TECHNICAL_PARAM]
 
@@ -458,6 +466,14 @@ class TableSqlTextCleaner(BaseSqlTextCleaner):
         if paranthesis in self.text:
             pos = self.text.find(paranthesis)
             self.text = self.text[:pos]
+        return self
+
+    def rm_empty_string(self) -> None:
+        """
+        set empty strings to None
+        """
+        if len(self.text) < 1:
+            self.text = None
         return self
 
 

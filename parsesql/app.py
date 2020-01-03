@@ -9,8 +9,8 @@
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
 
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
 
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -20,7 +20,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from parsesql.main.sql_parser.snowsqlparser import ParseSql
 from parsesql.main.sql_parser.file_finder import FileFinder
 from parsesql.main.database.db_engine import Session
 from parsesql.main.database.models import TableDependency
@@ -32,7 +31,7 @@ import time
 class Runner(object):
     def __init__(self, parallelism=0, bulk_load=True):
         self.allfiles = None
-        self.dependencies = list()
+        self.dependencies = []
         self.parallelism = parallelism
         self.bulk_load = bulk_load
         self.executer = self._get_executer()
@@ -48,8 +47,8 @@ class Runner(object):
         self.executer.to_parse_files = self.allfiles
         result = self.executer.run()
         self.dependencies = result
-     
-    def findFiles(self) -> None:    
+
+    def findFiles(self) -> None:
         self.allfiles = FileFinder().getListOfFiles()
 
     def _data_load(self):
@@ -62,11 +61,11 @@ class Runner(object):
         session = Session()
         for sqlobject in self.dependencies:
             for table in sqlobject['tables']:
-                dbentry = TableDependency( objectName = sqlobject['name'] ,
-                                           filename = sqlobject['filename'],
-                                           dependentTableName= table,
-                                           uuid = str(uuid.uuid1())
-                                        )
+                dbentry = TableDependency(objectName=sqlobject['name'],
+                                          filename=sqlobject['filename'],
+                                          dependentTableName=table,
+                                          uuid=str(uuid.uuid1())
+                                          )
                 session.add(dbentry)
                 session.commit()
         session.close()
@@ -76,11 +75,11 @@ class Runner(object):
         bulkinsertobjects = list()
         for sqlobject in self.dependencies:
             for table in sqlobject['tables']:
-                dbentry = TableDependency( objectName = sqlobject['name'] ,
-                                           filename = sqlobject['filename'],
-                                           dependentTableName= table,
-                                           uuid = str(uuid.uuid1())
-                                        )
+                dbentry = TableDependency(objectName=sqlobject['name'],
+                                          filename=sqlobject['filename'],
+                                          dependentTableName=table,
+                                          uuid=str(uuid.uuid1())
+                                          )
                 bulkinsertobjects.append(dbentry)
         session.bulk_save_objects(bulkinsertobjects)
         session.commit()
@@ -90,14 +89,9 @@ class Runner(object):
         self.parseSql()
         self._data_load()
 
+
 if __name__ == "__main__":
     starttime = time.time()
     Runner(parallelism=1, bulk_load=True).start()
     endtime = time.time()
-    print('Time needed:', endtime - starttime )
-    
-
-
-
-
-
+    print('Time needed:', endtime - starttime)

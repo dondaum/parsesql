@@ -404,6 +404,15 @@ class SnowSqlParserTest(unittest.TestCase):
         clean = self.sql_parser_obj._rm_after_whitespace(raw=uncleaned)
         self.assertEqual(expected, clean)
 
+    def test_remove_empty_string(self):
+        """
+        test if empty strings can be removed
+        """
+        uncleaned = ["", " ", "ORDERS"]
+        cleaned = [' ', 'ORDERS']
+        clean = self.sql_parser_obj._rm_empty_from_list(raw=uncleaned)
+        self.assertEqual(clean, cleaned)
+
     def test_with_name_parsing(self):
         """
         test if the first cte name declared by with can be parsed
