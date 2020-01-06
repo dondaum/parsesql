@@ -20,6 +20,32 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from sqlalchemy.ext.declarative import declarative_base
 
-Base = declarative_base()
+import unittest
+from parsesql.main.sql_parser import sqlExpressions
+
+
+class SqlExpressionTest(unittest.TestCase):
+
+    def test_if_all_global_variables_exist(self):
+        """
+        test if all sql expressions global variable exist
+        """
+        PARAMS = [
+            "RESERVED_SQL_EXPRESSIONS",
+            "END_STATEMENT",
+            "SPECIAL_CHARACTERS",
+            "DUAL_LIST",
+            "TECHNICAL_PARAM",
+        ]
+        module_variables = dir(sqlExpressions)
+        all_var_exist = True
+        for param in PARAMS:
+            if param not in module_variables:
+                all_var_exist = False
+
+        self.assertEqual(True, all_var_exist)
+
+
+if __name__ == "__main__":
+    unittest.main()

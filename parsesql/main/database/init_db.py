@@ -9,8 +9,8 @@
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
 
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
 
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -20,14 +20,14 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from .db_engine import Session, db_engine
-from .models import TableDependency, Base
+from .db_engine import db_engine
+from .models import Base
 
-Base.metadata.drop_all(db_engine)
-# 1 - generate database schema
-Base.metadata.create_all(db_engine)
 
-# 2 - check connection
-session = Session()
-session.commit()
-session.close()
+def create_database():
+    Base.metadata.drop_all(db_engine)
+    Base.metadata.create_all(db_engine)
+
+
+if __name__ == "__main__":
+    create_database()

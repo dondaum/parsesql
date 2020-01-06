@@ -20,35 +20,46 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+
+import unittest
+from parsesql.main.sql_parser import file_finder
 from parsesql.config.config_reader import Config
-from parsesql.util.logger_service import LoggerMixin
+from parsesql import exampleSql
+from pathlib import Path
 import os
 
+SQLFILEPATH = os.path.dirname(exampleSql.__file__)
 
-class FileFinder(LoggerMixin):
-    def __init__(self):
-        self.type = Config.file_extension
-        self.targetdir = Config.sqldir
 
-    def getListOfFiles(self, dirName=None):
-        dirName = dirName or self.targetdir
-        listOfFile = os.listdir(dirName)
-        allFiles = list()
+class FileFinderTest(unittest.TestCase):
 
-        # Iterate over all the entries
-        for entry in listOfFile:
-            # Create full path
-            fullPath = os.path.join(dirName, entry)
-            # If entry is a directory then get the list of files
-            # in this directory
-            if os.path.isdir(fullPath):
-                allFiles = allFiles + self.getListOfFiles(fullPath)
-            else:
-                allFiles.append(fullPath)
-        # filter out sql files
-        allFiles = [file for file in allFiles
-                    if file.endswith(f".{self.type}")]
-        if allFiles:
-            self.logger.info(f'Recursive Search found files. Number of'
-                             f'files found: {len(allFiles)}')
-        return allFiles
+    def test_if_filefinder_class_exists(self):
+        """
+        test if FileFinder class is available
+        """
+        klass = file_finder.FileFinder()
+        self.assertEqual(klass.__class__.__name__, "FileFinder")
+
+    def test_if_files_get_searched(self):
+        """
+        test if recursive file search method returns the correct list
+        of files
+        """
+        # Change sql directory path in Config class
+        Config.sqldir = Path(SQLFILEPATH)
+
+        targetfiles_gen = os.walk(SQLFILEPATH)
+        targetfiles = []
+        for path, directories, files in targetfiles_gen:
+            for file in files:
+                if file.endswith(".sql"):
+                    targetfiles.append(os.path.join(path, file))
+
+        finder = file_finder.FileFinder()
+        foundfiles = finder.getListOfFiles()
+
+        self.assertEqual(sorted(targetfiles), sorted(foundfiles))
+
+
+if __name__ == "__main__":
+    unittest.main()

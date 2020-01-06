@@ -20,6 +20,22 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from sqlalchemy.ext.declarative import declarative_base
+import unittest
+from tests.helper.config_helper import create_config
 
-Base = declarative_base()
+
+def parsesql_test_suite():
+    """Test suite for parsesql tests"""
+    create_config().create()
+    test_loader = unittest.TestLoader()
+    test_suite = test_loader.discover('.')
+    return test_suite
+
+
+if __name__ == "__main__":
+    result = unittest.TextTestRunner(verbosity=2).run(parsesql_test_suite())
+
+    if result.wasSuccessful():
+        exit(0)
+    else:
+        exit(1)
