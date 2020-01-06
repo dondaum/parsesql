@@ -59,13 +59,13 @@ class Runner():
         main sql parsing method that searches for files, prime and config
         executer and call run method
         """
-        self.findFiles()
+        self.search_files()
         self.executer.target_list = self.allfiles
         self.executer.klass = ParseSql
         self.executer.klass_method_name = "parse_dependencies"
         self.dependencies = self.executer.run()
 
-    def findFiles(self) -> None:
+    def search_files(self) -> None:
         """
         Instance method that searches all files
         """

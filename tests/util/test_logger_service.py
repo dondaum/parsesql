@@ -21,32 +21,8 @@
 # SOFTWARE.
 
 import unittest
-import json
-import os
+from tests.helper.config_helper import JsonConfigGenerator
 from parsesql.util import logger_service
-from parsesql import config
-
-CONFIGPATH = os.path.dirname(config.__file__)
-
-
-class JsonConfigGenerator():
-    def __init__(self, **kwargs):
-        for key, value in kwargs.items():
-            setattr(self, key, value)
-
-    def _get_filepath(self):
-        jsonname = 'configuration.json'
-        return os.path.join(CONFIGPATH, jsonname)
-
-    def create(self):
-        with open(self._get_filepath(), 'w') as json_file:
-            json.dump(vars(self), json_file, indent=4)
-
-    def remove(self):
-        try:
-            os.remove(self._get_filepath())
-        except Exception as e:
-            print(e)
 
 
 class LoggerTest(unittest.TestCase):
@@ -58,7 +34,7 @@ class LoggerTest(unittest.TestCase):
     @staticmethod
     def create_config(level="INFO"):
         config = JsonConfigGenerator(
-            sqldirectory="/Users/sebastiandaum/Desktop/views",
+            sqldirectory="/A/C/Desktop/views",
             file_extension="sql",
             strategy="sqllite",
             Snowflake_Account={

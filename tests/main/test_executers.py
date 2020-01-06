@@ -183,3 +183,7 @@ class MultiProcessingExecuterTest(unittest.TestCase):
                                                 klass=TMath)
         res = exe.run()
         self.assertEqual(res, None)
+
+
+if __name__ == "__main__":
+    unittest.main()
