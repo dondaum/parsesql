@@ -20,42 +20,87 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+from parsesql.util.logger_service import LoggerMixin
 from multiprocessing import Pool, cpu_count
-from parsesql.main.sql_parser.snowsqlparser import ParseSql
+from typing import Callable
 
 
 class BaseExecuter(object):
     pass
 
 
-class SequentialExecuter(BaseExecuter):
+class SequentialExecuter(BaseExecuter, LoggerMixin):
 
-    def __init__(self, to_parse_files=None):
-        self.to_parse_files = to_parse_files
+    def __init__(self,
+                 target_list: list = None,
+                 klass=None,
+                 klass_method_name: str = None,
+                 func: Callable = None):
 
-    def parse(self):
-        dependencies = []
-        for file in self.to_parse_files:
-            dependencies.append(ParseSql(file=file).parse_dependencies())
-        return dependencies
+        self.target_list = target_list
+        self.klass = klass
+        self.klass_method_name = klass_method_name
+        self.func = func
 
     def run(self):
-        return self.parse()
+        """
+        run either a single callable or class method
+        """
+        if (self.klass and self.klass_method_name):
+            return [getattr(self.klass(element), self.klass_method_name)() for
+                    element in self.target_list]
+        elif self.func:
+            return [self.func(element) for element in self.target_list]
+        else:
+            self.logger.error(f'Error happend. You must either declare a '
+                              f'function or a class with init param and '
+                              f'a dependent method'
+                              )
 
 
-class MultiProcessingExecuter(BaseExecuter):
+class MultiProcessingExecuter(BaseExecuter, LoggerMixin):
 
-    def __init__(self, to_parse_files=None):
-        self.to_parse_files = to_parse_files
+    def __init__(self,
+                 target_list: list = None,
+                 klass=None,
+                 klass_method_name: str = None,
+                 func: Callable = None,
+                 cpu_cores: int = 1):
+
+        self.target_list = target_list
+        self.klass = klass
+        self.klass_method_name = klass_method_name
+        self.func = func
+        self.cpu_cores = cpu_cores
 
     def determine_max_proc(self):
         return cpu_count()
 
-    def parse(self, file):
-        return ParseSql(file=file).parse_dependencies()
+    def determine_use_process(self):
+        if self.cpu_cores >= self.determine_max_proc():
+            return self.determine_max_proc() - 1
+        else:
+            return self.cpu_cores
+
+    def _klass_run(self, file):
+        """
+        Helper run method for the process mapping and running
+        """
+        return getattr(self.klass(file), self.klass_method_name)()
 
     def run(self):
-        number_of_processcess = self.determine_max_proc() - 1
-
+        """
+        run either a single callable or class method
+        """
+        number_of_processcess = self.determine_use_process()
         p = Pool(number_of_processcess)
-        return p.map(self.parse, self.to_parse_files)
+
+        if (self.klass and self.klass_method_name):
+            return p.map(self._klass_run, self.target_list)
+        elif self.func:
+            return p.map(self.func, self.target_list)
+        else:
+            self.logger.error(f'Error happend. You must either declare a '
+                              f'function or a class with init param and '
+                              f'a dependent method'
+                              )

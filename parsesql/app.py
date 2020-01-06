@@ -23,12 +23,21 @@
 from parsesql.main.sql_parser.file_finder import FileFinder
 from parsesql.main.database.db_engine import Session
 from parsesql.main.database.models import TableDependency
+from parsesql.main.sql_parser.snowsqlparser import ParseSql
 from parsesql.main.executers import SequentialExecuter, MultiProcessingExecuter
 import uuid
 import time
 
 
-class Runner(object):
+class Runner():
+    """
+    :param bulk_load: if true all insert will hapen in a bulk load else single
+    INSERTs in the database
+    :param parallelism: if > 0 then work gets applied on multiple cpus. Notice
+    this will reduce work on number of cpus on machine minus - 1. So if your
+    machine has 4 cpus it will run on max 3 cpus concurrently even if 8 is
+    given as a parameter
+    """
     def __init__(self, parallelism=0, bulk_load=True):
         self.allfiles = None
         self.dependencies = []
@@ -37,21 +46,36 @@ class Runner(object):
         self.executer = self._get_executer()
 
     def _get_executer(self):
+        """
+        factory class method that return correct executer
+        """
         if self.parallelism <= 0:
             return SequentialExecuter()
         else:
-            return MultiProcessingExecuter()
+            return MultiProcessingExecuter(cpu_cores=self.parallelism)
 
-    def parseSql(self) -> None:
+    def start_sql_parsing(self) -> None:
+        """
+        main sql parsing method that searches for files, prime and config
+        executer and call run method
+        """
         self.findFiles()
-        self.executer.to_parse_files = self.allfiles
-        result = self.executer.run()
-        self.dependencies = result
+        self.executer.target_list = self.allfiles
+        self.executer.klass = ParseSql
+        self.executer.klass_method_name = "parse_dependencies"
+        self.dependencies = self.executer.run()
 
     def findFiles(self) -> None:
+        """
+        Instance method that searches all files
+        """
         self.allfiles = FileFinder().getListOfFiles()
 
     def _data_load(self):
+        """
+        factory method that either single or bulk insert data in the
+        database
+        """
         if self.bulk_load:
             self._bulkinsertdep()
         else:
@@ -86,12 +110,12 @@ class Runner(object):
         session.close()
 
     def start(self) -> None:
-        self.parseSql()
+        self.start_sql_parsing()
         self._data_load()
 
 
 if __name__ == "__main__":
     starttime = time.time()
-    Runner(parallelism=1, bulk_load=True).start()
+    Runner(parallelism=8, bulk_load=True).start()
     endtime = time.time()
     print('Time needed:', endtime - starttime)

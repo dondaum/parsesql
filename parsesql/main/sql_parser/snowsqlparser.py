@@ -33,7 +33,7 @@ from typing import Generator
 
 
 class ParseSql(LoggerMixin):
-    def __init__(self, file):
+    def __init__(self, file=None):
         self.file = file
         self.filecontent = self._readFile()
         self.filename = os.path.basename(self.file)
