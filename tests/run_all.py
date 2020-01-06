@@ -21,14 +21,21 @@
 # SOFTWARE.
 
 import unittest
+from tests.helper.config_helper import create_config
 
 
 def parsesql_test_suite():
     """Test suite for parsesql tests"""
+    create_config().create()
     test_loader = unittest.TestLoader()
     test_suite = test_loader.discover('.')
     return test_suite
 
 
 if __name__ == "__main__":
-    unittest.TextTestRunner(verbosity=2).run(parsesql_test_suite())
+    result = unittest.TextTestRunner(verbosity=2).run(parsesql_test_suite())
+
+    if result.wasSuccessful():
+        exit(0)
+    else:
+        exit(1)

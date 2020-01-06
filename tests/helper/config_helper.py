@@ -45,3 +45,25 @@ class JsonConfigGenerator():
             os.remove(self._get_filepath())
         except Exception as e:
             print(e)
+
+
+def create_config(level="INFO"):
+    config = JsonConfigGenerator(
+        sqldirectory="/A/C/Desktop/views",
+        file_extension="sql",
+        strategy="sqllite",
+        Snowflake_Account={
+            "user": "user",
+            "password": "password",
+            "account": "account",
+            "database": "database",
+            "schema": "schema",
+            "warehouse": "warehouse",
+        },
+        logging={
+            "format": '[%(asctime)s] [%(processName)-10s] [%(name)s] '
+                      '[%(levelname)s] -> %(message)s',
+            "level": f"{level}",
+        }
+    )
+    return config
